@@ -1,0 +1,22 @@
+# Node dependencies
+node_modules/
+
+# Local database
+server/database.sqlite
+server/database.sqlite-journal
+
+# Local environment configuration (API keys & Secrets)
+server/.env
+
+# Build directories
+dist/
+ai-resume-checker-ui-boilerplate-code-main/dist/
+
+# Test assets and scratch scripts
+ai-resume-checker-ui-boilerplate-code-main/jane_doe_resume.pdf
+ai-resume-checker-ui-boilerplate-code-main/generate_test_pdf.js
+server/upload_test_resume.js
+
+# OS system files
+.DS_Store
+Thumbs.db
