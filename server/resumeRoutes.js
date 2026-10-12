@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
 import { diffWords, diffLines } from "diff";
 import { Resume, Version, Analysis, Activity, sequelize } from "./db.js";
 import { parseResumeText, analyzeResume } from "./gemini.js";
@@ -21,10 +22,19 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/pdf" || file.originalname.toLowerCase().endsWith(".pdf")) {
+    const filename = (file.originalname || "").toLowerCase();
+    const mime = file.mimetype;
+    const isPdf = mime === "application/pdf" || filename.endsWith(".pdf");
+    const isDocx =
+      mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      mime === "application/msword" ||
+      (mime === "application/octet-stream" && filename.endsWith(".docx")) ||
+      filename.endsWith(".docx");
+
+    if (isPdf || isDocx) {
       cb(null, true);
     } else {
-      cb(new Error("PDF files only."));
+      cb(new Error("PDF or DOCX files only."));
     }
   },
 });
@@ -210,7 +220,7 @@ router.get("/:id/versions/:versionId", authMiddleware, async (req, res) => {
   }
 });
 
-// 4. UPLOAD RESUME (Multer PDF + Text Extraction + Gemini Parse)
+// 4. UPLOAD RESUME (Multer PDF or DOCX + Text Extraction + Gemini Parse)
 router.post("/", authMiddleware, aiRateLimiter, async (req, res) => {
   // Use multer helper to handle the file upload
   upload.single("file")(req, res, async (err) => {
@@ -219,27 +229,89 @@ router.post("/", authMiddleware, aiRateLimiter, async (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({ error: { message: "No resume PDF file uploaded." } });
+      return res.status(400).json({ error: { message: "No resume PDF or DOCX file uploaded." } });
     }
 
     const userId = req.user.id;
     const title = req.body.title || req.file.originalname;
 
     try {
-      // 1. Text extraction using pdf-parse
-      const pdfBuffer = req.file.buffer;
-      const pdfData = await pdfParse(pdfBuffer);
-      const rawExtractedText = pdfData.text || "";
+      const fileBuffer = req.file.buffer;
 
-      // 2. Scanned / Image-only detection
-      const trimmedText = rawExtractedText.trim();
-      const wordCount = trimmedText.split(/\s+/).filter(Boolean).length;
-      const letterCount = (trimmedText.match(/[a-zA-Z]/g) || []).length;
+      // 1. Inspect Magic Bytes:
+      // PDF header: %PDF -> [0x25, 0x50, 0x44, 0x46]
+      // DOCX header: PK\x03\x04 -> [0x50, 0x4B, 0x03, 0x04]
+      const isPdfHeader =
+        fileBuffer &&
+        fileBuffer.length >= 4 &&
+        fileBuffer[0] === 0x25 &&
+        fileBuffer[1] === 0x50 &&
+        fileBuffer[2] === 0x44 &&
+        fileBuffer[3] === 0x46;
 
-      if (trimmedText.length < 150 || letterCount < 50 || wordCount < 15) {
+      const isDocxHeader =
+        fileBuffer &&
+        fileBuffer.length >= 4 &&
+        fileBuffer[0] === 0x50 &&
+        fileBuffer[1] === 0x4b &&
+        fileBuffer[2] === 0x03 &&
+        fileBuffer[3] === 0x04;
+
+      if (!isPdfHeader && !isDocxHeader) {
         return res.status(400).json({
           error: {
-            message: "Scanned or image-only PDF detected. Please upload a text-based PDF.",
+            message:
+              "Invalid file format: File header does not match PDF (%PDF) or DOCX (PK) signature. Please upload a valid PDF or Word document.",
+          },
+        });
+      }
+
+      // 2. Text extraction based on file type
+      let rawExtractedText = "";
+      if (isPdfHeader) {
+        try {
+          const pdfData = await pdfParse(fileBuffer);
+          rawExtractedText = (pdfData.text || "").trim();
+        } catch (parseErr) {
+          console.error("PDF Parse binary failure:", parseErr);
+          return res.status(400).json({
+            error: {
+              message: "Failed to read PDF structure. The file may be password-protected or corrupt.",
+            },
+          });
+        }
+      } else if (isDocxHeader) {
+        try {
+          const docxResult = await mammoth.extractRawText({ buffer: fileBuffer });
+          rawExtractedText = (docxResult.value || "").trim();
+        } catch (docxErr) {
+          console.error("DOCX extraction failure:", docxErr);
+          return res.status(400).json({
+            error: {
+              message: "Failed to read DOCX structure. The document may be corrupted or encrypted.",
+            },
+          });
+        }
+      }
+
+      // 3. Clear message for empty or scanned files
+      if (!rawExtractedText || rawExtractedText.length === 0) {
+        return res.status(400).json({
+          error: {
+            message:
+              "This file contains no readable text. It appears to be an image-only, scanned, or empty document. Please upload a text-based PDF or DOCX (e.g. exported from Google Docs, Word, or LaTeX).",
+          },
+        });
+      }
+
+      const wordCount = rawExtractedText.split(/\s+/).filter(Boolean).length;
+      const letterCount = (rawExtractedText.match(/[a-zA-Z]/g) || []).length;
+
+      if (rawExtractedText.length < 150 || letterCount < 50 || wordCount < 15) {
+        return res.status(400).json({
+          error: {
+            message:
+              "Scanned or low-text document detected: The file contains insufficient extractable text. Please upload a standard text-based PDF or Word resume.",
           },
         });
       }
@@ -247,13 +319,13 @@ router.post("/", authMiddleware, aiRateLimiter, async (req, res) => {
       // Log AI Action for rate limiting
       await logAIAction(userId, "upload");
 
-      // 3. AI parsing using Gemini
-      const parsedSections = await parseResumeText(trimmedText);
+      // 4. AI parsing using Gemini
+      const parsedSections = await parseResumeText(rawExtractedText);
 
       // Reconstruct standard plain-text for cleaner diffs and storage
       const standardizedText = reconstructText(parsedSections);
 
-      // 4. Database save
+      // 5. Database save
       const resume = await Resume.create({
         userId,
         title,
@@ -299,7 +371,7 @@ router.post("/", authMiddleware, aiRateLimiter, async (req, res) => {
     } catch (error) {
       console.error("Upload & parse error:", error);
       return res.status(500).json({
-        error: { message: error.message || "Failed to process and parse resume PDF." },
+        error: { message: error.message || "Failed to process and parse resume document." },
       });
     }
   });
@@ -327,7 +399,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 // 6. RUN AI ANALYSIS (ATS Score, Issues, Bullet Rewrites)
 router.post("/:id/analyze", authMiddleware, aiRateLimiter, validateBody(analyzeSchema), async (req, res) => {
   const { id } = req.params;
-  const { versionId, targetRole } = req.body;
+  const { versionId, targetRole, jobDescription } = req.body;
   const userId = req.user.id;
 
   try {
@@ -344,14 +416,14 @@ router.post("/:id/analyze", authMiddleware, aiRateLimiter, validateBody(analyzeS
     // Log AI Action for rate limiting
     await logAIAction(userId, "analyze");
 
-    // Run Gemini analysis
-    const analysisResult = await analyzeResume(version.parsedSections, targetRole);
+    // Run Gemini analysis (with stable scoring & JD matching)
+    const analysisResult = await analyzeResume(version.parsedSections, targetRole, jobDescription);
 
     // Save Analysis
     const analysis = await Analysis.create({
       versionId: version.id,
       atsScore: analysisResult.atsScore,
-      model: "gemini-1.5-flash",
+      model: analysisResult.model || (analysisResult.isFallback ? "basic mode (AI unavailable)" : (process.env.GEMINI_MODEL || "gemini-2.5-flash")),
       summary: analysisResult.summary,
       scoreBreakdown: analysisResult.scoreBreakdown,
       issues: analysisResult.issues,
@@ -360,6 +432,7 @@ router.post("/:id/analyze", authMiddleware, aiRateLimiter, validateBody(analyzeS
       keywordsMissing: analysisResult.keywordsMissing,
       bulletRewrites: analysisResult.bulletRewrites,
       targetRole: targetRole || "Software Engineer",
+      jobDescription: jobDescription || null,
     });
 
     // Update Version score
@@ -401,6 +474,8 @@ router.post("/:id/analyze", authMiddleware, aiRateLimiter, validateBody(analyzeS
         keywordsMissing: analysis.keywordsMissing,
         bulletRewrites: analysis.bulletRewrites,
         targetRole: analysis.targetRole,
+        jobDescription: analysis.jobDescription,
+        jdMatch: analysisResult.jdMatch,
       },
     });
   } catch (error) {
@@ -443,6 +518,7 @@ router.get("/:id/analyses", authMiddleware, async (req, res) => {
       keywordsMissing: an.keywordsMissing,
       bulletRewrites: an.bulletRewrites,
       targetRole: an.targetRole,
+      jobDescription: an.jobDescription,
     }));
 
     return res.json({ analyses });
@@ -491,6 +567,7 @@ router.get("/:id/versions/:versionId/analysis", authMiddleware, async (req, res)
         keywordsMissing: an.keywordsMissing,
         bulletRewrites: an.bulletRewrites,
         targetRole: an.targetRole,
+        jobDescription: an.jobDescription,
       },
     });
   } catch (error) {
@@ -498,6 +575,7 @@ router.get("/:id/versions/:versionId/analysis", authMiddleware, async (req, res)
     return res.status(500).json({ error: { message: "Internal server error" } });
   }
 });
+
 
 // 9. APPLY REWRITES -> NEW VERSION (No Gemini charge)
 router.post("/:id/rewrite", authMiddleware, validateBody(rewriteSchema), async (req, res) => {
@@ -538,33 +616,62 @@ router.post("/:id/rewrite", authMiddleware, validateBody(rewriteSchema), async (
     const modifiedSectionsSet = new Set();
 
     for (const rw of rewritesToApply) {
-      const { section, original, rewritten } = rw;
-      if (!section || !original || !rewritten) continue;
+      const { section, original, rewritten, experienceIndex, bulletIndex } = rw;
+      if (!rewritten) continue;
 
-      if (section === "summary") {
-        if (newSections.summary && newSections.summary.toLowerCase().trim() === original.toLowerCase().trim()) {
-          newSections.summary = rewritten;
-          appliedCount++;
-          modifiedSectionsSet.add("summary");
-        } else if (newSections.summary && newSections.summary.includes(original)) {
-          newSections.summary = newSections.summary.replace(original, rewritten);
-          appliedCount++;
-          modifiedSectionsSet.add("summary");
-        }
-      } else if (section === "experience" && Array.isArray(newSections.experience)) {
-        for (const job of newSections.experience) {
-          if (!Array.isArray(job.bullets)) continue;
-          for (let i = 0; i < job.bullets.length; i++) {
-            const b = job.bullets[i];
-            if (b.toLowerCase().trim() === original.toLowerCase().trim()) {
-              job.bullets[i] = rewritten;
-              appliedCount++;
-              modifiedSectionsSet.add("experience");
-            } else if (b.includes(original)) {
-              job.bullets[i] = b.replace(original, rewritten);
-              appliedCount++;
-              modifiedSectionsSet.add("experience");
+      let applied = false;
+
+      // 1. Primary robust strategy: Direct index reference (experienceIndex + bulletIndex)
+      if (
+        (section === "experience" || !section) &&
+        typeof experienceIndex === "number" &&
+        typeof bulletIndex === "number" &&
+        Array.isArray(newSections.experience) &&
+        newSections.experience[experienceIndex] &&
+        Array.isArray(newSections.experience[experienceIndex].bullets) &&
+        bulletIndex >= 0 &&
+        bulletIndex < newSections.experience[experienceIndex].bullets.length
+      ) {
+        newSections.experience[experienceIndex].bullets[bulletIndex] = rewritten;
+        applied = true;
+        appliedCount++;
+        modifiedSectionsSet.add("experience");
+      }
+
+      // 2. Secondary fallback strategy: Exact or substring text match
+      if (!applied && original) {
+        if (section === "summary") {
+          if (newSections.summary && newSections.summary.toLowerCase().trim() === original.toLowerCase().trim()) {
+            newSections.summary = rewritten;
+            appliedCount++;
+            modifiedSectionsSet.add("summary");
+            applied = true;
+          } else if (newSections.summary && newSections.summary.includes(original)) {
+            newSections.summary = newSections.summary.replace(original, rewritten);
+            appliedCount++;
+            modifiedSectionsSet.add("summary");
+            applied = true;
+          }
+        } else if (Array.isArray(newSections.experience)) {
+          for (const job of newSections.experience) {
+            if (!Array.isArray(job.bullets)) continue;
+            for (let i = 0; i < job.bullets.length; i++) {
+              const b = job.bullets[i];
+              if (b.toLowerCase().trim() === original.toLowerCase().trim()) {
+                job.bullets[i] = rewritten;
+                appliedCount++;
+                modifiedSectionsSet.add("experience");
+                applied = true;
+                break;
+              } else if (b.includes(original)) {
+                job.bullets[i] = b.replace(original, rewritten);
+                appliedCount++;
+                modifiedSectionsSet.add("experience");
+                applied = true;
+                break;
+              }
             }
+            if (applied) break;
           }
         }
       }

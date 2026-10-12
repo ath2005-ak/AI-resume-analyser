@@ -20,3 +20,8 @@ server/upload_test_resume.js
 # OS system files
 .DS_Store
 Thumbs.db
+
+# Other projects and temporary directories
+razorpay_project/
+__pycache__/
+*.pyc

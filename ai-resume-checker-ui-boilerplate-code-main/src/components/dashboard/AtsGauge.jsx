@@ -56,12 +56,20 @@ export function AtsGauge({ score = 0, delta = 0 }) {
         <Badge tone={status.tone}>{status.label}</Badge>
       </CardHeader>
 
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 py-2">
+      <div
+        className="flex-1 flex flex-col items-center justify-center gap-4 py-2"
+        role="meter"
+        aria-valuenow={safeScore}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`ATS Readiness Score: ${safeScore} out of 100 (${status.label})`}
+      >
         <div className="relative w-full max-w-[360px]">
           <svg
             viewBox="0 0 300 170"
             className="w-full h-auto block"
             preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
           >
             <defs>
               <linearGradient id="atsGrad" x1="0" y1="0" x2="1" y2="0">

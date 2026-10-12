@@ -13,6 +13,8 @@ import {
   Trophy,
   Sparkles,
   AlertCircle,
+  AlertTriangle,
+  Info,
   ChevronRight,
   BarChart3,
 } from "lucide-react";
@@ -29,7 +31,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { useInsights } from "@/hooks/useAnalytics";
 
-const SEV_TONE = { low: "neutral", medium: "warning", high: "danger" };
+const SEV_CONFIG = {
+  high: { tone: "danger", label: "High Impact", icon: AlertCircle },
+  medium: { tone: "warning", label: "Medium Impact", icon: AlertTriangle },
+  low: { tone: "neutral", label: "Low Impact", icon: Info },
+};
 
 export default function Insights() {
   const nav = useNavigate();
@@ -181,24 +187,30 @@ export default function Insights() {
             <p className="text-sm text-[var(--ink-muted)]">No issues recorded yet.</p>
           ) : (
             <div className="space-y-3">
-              {data.topIssues.map((issue, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-[var(--surface-2)] flex items-center justify-center text-[var(--ink-muted)] shrink-0">
-                    <AlertCircle size={14} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{issue.title}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge tone={SEV_TONE[issue.severity] || "neutral"}>
-                        {issue.severity}
-                      </Badge>
-                      <span className="text-xs text-[var(--ink-muted)]">
-                        {issue.count}× across analyses
-                      </span>
+              {data.topIssues.map((issue, i) => {
+                const sevKey = (issue.severity || "low").toLowerCase();
+                const sev = SEV_CONFIG[sevKey] || SEV_CONFIG.low;
+                const SevIcon = sev.icon;
+                return (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-[var(--surface-2)] flex items-center justify-center text-[var(--ink-muted)] shrink-0" aria-hidden="true">
+                      <AlertCircle size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{issue.title}</div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge tone={sev.tone} className="gap-1 inline-flex items-center" role="status" aria-label={`Severity: ${sev.label}`}>
+                          <SevIcon size={10} aria-hidden="true" />
+                          <span>{sev.label}</span>
+                        </Badge>
+                        <span className="text-xs text-[var(--ink-muted)]">
+                          {issue.count}× across analyses
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>

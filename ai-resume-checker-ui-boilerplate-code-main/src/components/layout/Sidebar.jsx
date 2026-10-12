@@ -92,6 +92,7 @@ export function Sidebar() {
 
   return (
     <aside
+      aria-label="Application sidebar"
       className={cn(
         "group/sidebar hidden md:flex shrink-0 h-[calc(100vh-32px)] sticky top-4 ml-4",
         "flex-col items-center justify-between py-5 rounded-3xl",
@@ -118,11 +119,11 @@ export function Sidebar() {
               "group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:delay-100",
             )}
           >
-            Roaster
+            Resume Tracker
           </span>
         </div>
 
-        <nav className="flex flex-col items-center gap-1.5">
+        <nav aria-label="Sidebar navigation" className="flex flex-col items-center gap-1.5">
           {NAV.map((item) => (
             <NavItem key={item.to} {...item} />
           ))}

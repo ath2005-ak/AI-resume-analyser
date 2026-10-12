@@ -7,290 +7,346 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 
-const C = {
-  ink: "#111418",
-  inkMuted: "#5C6470",
-  accent: "#2F4A3A",
-  accentSoft: "#E6EFE8",
-  hairline: "#E5E5DF",
-  bg: "#FFFFFF",
+const themeConfigs = {
+  modern: {
+    font: "Helvetica",
+    fontBold: "Helvetica-Bold",
+    fontItalic: "Helvetica-Oblique",
+    ink: "#111418",
+    inkMuted: "#5C6470",
+    accent: "#2F4A3A",
+    accentSoft: "#E6EFE8",
+    hairline: "#E5E5DF",
+    bg: "#FFFFFF",
+    headerAlign: "left",
+    isCentered: false,
+    nameSize: 26,
+    sectionSpacing: 18,
+  },
+  executive: {
+    font: "Times-Roman",
+    fontBold: "Times-Bold",
+    fontItalic: "Times-Italic",
+    ink: "#111418",
+    inkMuted: "#4B5563",
+    accent: "#1B365D",
+    accentSoft: "#EBF0F7",
+    hairline: "#94A3B8",
+    bg: "#FFFFFF",
+    headerAlign: "center",
+    isCentered: true,
+    nameSize: 28,
+    sectionSpacing: 16,
+  },
+  tech: {
+    font: "Helvetica",
+    fontBold: "Helvetica-Bold",
+    fontItalic: "Helvetica-Oblique",
+    ink: "#0F172A",
+    inkMuted: "#64748B",
+    accent: "#0284C7",
+    accentSoft: "#F0F9FF",
+    hairline: "#E2E8F0",
+    bg: "#FFFFFF",
+    headerAlign: "left",
+    isCentered: false,
+    nameSize: 24,
+    sectionSpacing: 14,
+  },
 };
 
-const styles = StyleSheet.create({
-  page: {
-    paddingTop: 56,
-    paddingBottom: 56,
-    paddingHorizontal: 56,
-    fontSize: 10.25,
-    color: C.ink,
-    fontFamily: "Helvetica",
-    backgroundColor: C.bg,
-    lineHeight: 1.5,
-  },
+function buildStyles(templateKey = "modern") {
+  const cfg = themeConfigs[templateKey] || themeConfigs.modern;
 
-  // header
-  headerWrap: {
-    marginBottom: 22,
-  },
-  name: {
-    fontSize: 26,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: -0.6,
-    color: C.ink,
-    lineHeight: 1.15,
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 11.5,
-    fontFamily: "Helvetica",
-    color: C.accent,
-    letterSpacing: 0.4,
-    lineHeight: 1.3,
-    marginBottom: 12,
-  },
-  contactRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    fontSize: 9.5,
-    color: C.inkMuted,
-    marginTop: 2,
-  },
-  contactItem: {
-    marginRight: 14,
-    marginBottom: 3,
-  },
-  contactSep: {
-    color: C.hairline,
-    marginRight: 14,
-  },
-  link: {
-    color: C.accent,
-    textDecoration: "none",
-  },
-  rule: {
-    marginTop: 14,
-    height: 1,
-    backgroundColor: C.hairline,
-  },
+  return StyleSheet.create({
+    page: {
+      paddingTop: cfg.isCentered ? 48 : 54,
+      paddingBottom: 48,
+      paddingHorizontal: 52,
+      fontSize: 10,
+      color: cfg.ink,
+      fontFamily: cfg.font,
+      backgroundColor: cfg.bg,
+      lineHeight: 1.45,
+    },
 
-  // sections
-  section: {
-    marginTop: 18,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  sectionHeaderText: {
-    fontSize: 9,
-    fontFamily: "Helvetica-Bold",
-    letterSpacing: 1.6,
-    color: C.accent,
-    textTransform: "uppercase",
-  },
-  sectionHeaderLine: {
-    flex: 1,
-    height: 0.6,
-    backgroundColor: C.hairline,
-    marginLeft: 10,
-  },
+    // header
+    headerWrap: {
+      marginBottom: cfg.isCentered ? 16 : 20,
+      alignItems: cfg.isCentered ? "center" : "flex-start",
+    },
+    name: {
+      fontSize: cfg.nameSize,
+      fontFamily: cfg.fontBold,
+      letterSpacing: cfg.isCentered ? 0.5 : -0.5,
+      color: cfg.ink,
+      lineHeight: 1.15,
+      marginBottom: 4,
+      textAlign: cfg.headerAlign,
+    },
+    title: {
+      fontSize: 11.5,
+      fontFamily: cfg.font,
+      color: cfg.accent,
+      letterSpacing: 0.3,
+      lineHeight: 1.3,
+      marginBottom: 8,
+      textAlign: cfg.headerAlign,
+    },
+    contactRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: cfg.isCentered ? "center" : "flex-start",
+      fontSize: 9.25,
+      color: cfg.inkMuted,
+      marginTop: 2,
+    },
+    contactItem: {
+      marginRight: 12,
+      marginBottom: 3,
+    },
+    link: {
+      color: cfg.accent,
+      textDecoration: "none",
+    },
+    rule: {
+      marginTop: 10,
+      width: "100%",
+      height: cfg.isCentered ? 1.2 : 0.8,
+      backgroundColor: cfg.hairline,
+    },
 
-  // summary
-  summary: {
-    fontSize: 10.25,
-    lineHeight: 1.55,
-    color: C.ink,
-  },
+    // sections
+    section: {
+      marginTop: cfg.sectionSpacing,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: cfg.isCentered ? "center" : "flex-start",
+      marginBottom: 8,
+    },
+    sectionHeaderText: {
+      fontSize: 9,
+      fontFamily: cfg.fontBold,
+      letterSpacing: 1.5,
+      color: cfg.accent,
+      textTransform: "uppercase",
+    },
+    sectionHeaderLine: {
+      flex: 1,
+      height: 0.6,
+      backgroundColor: cfg.hairline,
+      marginLeft: 10,
+    },
 
-  // experience
-  expItem: {
-    marginBottom: 14,
-  },
-  expHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 1,
-  },
-  expRole: {
-    fontSize: 11,
-    fontFamily: "Helvetica-Bold",
-    color: C.ink,
-  },
-  expPeriod: {
-    fontSize: 9.5,
-    color: C.inkMuted,
-    fontFamily: "Helvetica",
-  },
-  expCompanyLine: {
-    fontSize: 10,
-    color: C.inkMuted,
-    marginBottom: 5,
-  },
-  expCompany: {
-    fontFamily: "Helvetica-Bold",
-    color: C.accent,
-  },
-  bullet: {
-    flexDirection: "row",
-    marginBottom: 3,
-    paddingLeft: 2,
-  },
-  bulletDot: {
-    width: 2.5,
-    height: 2.5,
-    borderRadius: 1.25,
-    backgroundColor: C.accent,
-    marginRight: 9,
-    marginTop: 6,
-  },
-  bulletText: {
-    flex: 1,
-    fontSize: 10.25,
-    lineHeight: 1.5,
-    color: C.ink,
-  },
+    // summary
+    summary: {
+      fontSize: 9.75,
+      lineHeight: 1.5,
+      color: cfg.ink,
+      textAlign: cfg.isCentered ? "justify" : "left",
+    },
 
-  // education
-  eduItem: {
-    marginBottom: 8,
-  },
-  eduRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-  },
-  eduDegree: {
-    fontSize: 10.5,
-    fontFamily: "Helvetica-Bold",
-    color: C.ink,
-  },
-  eduMeta: {
-    fontSize: 9.5,
-    color: C.inkMuted,
-  },
-  eduSchool: {
-    fontSize: 10,
-    color: C.accent,
-    marginTop: 1,
-  },
+    // experience
+    expItem: {
+      marginBottom: 12,
+    },
+    expHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      marginBottom: 1,
+    },
+    expRole: {
+      fontSize: 10.75,
+      fontFamily: cfg.fontBold,
+      color: cfg.ink,
+    },
+    expPeriod: {
+      fontSize: 9,
+      fontFamily: cfg.fontItalic,
+      color: cfg.inkMuted,
+    },
+    expCompanyLine: {
+      fontSize: 9.5,
+      color: cfg.inkMuted,
+      marginBottom: 4,
+    },
+    expCompany: {
+      color: cfg.accent,
+      fontFamily: cfg.fontBold,
+    },
 
-  // projects
-  projItem: {
-    marginBottom: 10,
-  },
-  projHeader: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    marginBottom: 2,
-  },
-  projName: {
-    fontSize: 10.75,
-    fontFamily: "Helvetica-Bold",
-    color: C.ink,
-    marginRight: 8,
-  },
-  projTech: {
-    fontSize: 9.5,
-    color: C.accent,
-  },
-  projDesc: {
-    fontSize: 10.25,
-    color: C.ink,
-    lineHeight: 1.5,
-  },
-  projLinks: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 3,
-  },
-  projLink: {
-    fontSize: 9,
-    color: C.accent,
-    marginRight: 10,
-    textDecoration: "none",
-  },
+    // bullets
+    bullet: {
+      flexDirection: "row",
+      marginBottom: 3,
+      paddingLeft: 4,
+    },
+    bulletDot: {
+      width: 3.5,
+      height: 3.5,
+      borderRadius: 2,
+      backgroundColor: cfg.accent,
+      marginTop: 4.5,
+      marginRight: 7,
+    },
+    bulletText: {
+      flex: 1,
+      fontSize: 9.5,
+      lineHeight: 1.45,
+      color: cfg.ink,
+    },
 
-  // skills
-  skillsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  skillChip: {
-    fontSize: 9.5,
-    backgroundColor: C.accentSoft,
-    color: C.accent,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    marginRight: 5,
-    marginBottom: 5,
-  },
+    // projects
+    projItem: {
+      marginBottom: 10,
+    },
+    projHeader: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      flexWrap: "wrap",
+      marginBottom: 2,
+    },
+    projName: {
+      fontSize: 10.25,
+      fontFamily: cfg.fontBold,
+      color: cfg.ink,
+      marginRight: 6,
+    },
+    projTech: {
+      fontSize: 8.75,
+      fontFamily: cfg.font,
+      color: cfg.accent,
+    },
+    projDesc: {
+      fontSize: 9.25,
+      lineHeight: 1.45,
+      color: cfg.ink,
+    },
+    projLinks: {
+      flexDirection: "row",
+      marginTop: 2,
+    },
+    projLink: {
+      fontSize: 8.75,
+      color: cfg.accent,
+      textDecoration: "none",
+      marginRight: 10,
+    },
 
-  // certifications
-  certItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-    marginBottom: 5,
-  },
-  certName: {
-    fontSize: 10.25,
-    fontFamily: "Helvetica-Bold",
-    color: C.ink,
-  },
-  certMeta: {
-    fontSize: 9.5,
-    color: C.inkMuted,
-  },
+    // education
+    eduItem: {
+      marginBottom: 8,
+    },
+    eduRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+    },
+    eduDegree: {
+      fontSize: 10.25,
+      fontFamily: cfg.fontBold,
+      color: cfg.ink,
+    },
+    eduSchool: {
+      fontSize: 9.5,
+      color: cfg.accent,
+      marginTop: 1,
+    },
+    eduMeta: {
+      fontSize: 8.75,
+      fontFamily: cfg.fontItalic,
+      color: cfg.inkMuted,
+    },
 
-  // two-column tail (languages + interests)
-  twoCol: {
-    flexDirection: "row",
-    gap: 24,
-  },
-  colHalf: {
-    flex: 1,
-  },
-  pillLine: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 4,
-  },
-  pill: {
-    fontSize: 9.75,
-    color: C.ink,
-    marginRight: 10,
-    marginBottom: 3,
-  },
+    // skills
+    skillsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginTop: 2,
+    },
+    skillChip: {
+      fontSize: 8.75,
+      fontFamily: cfg.font,
+      backgroundColor: cfg.accentSoft,
+      color: cfg.accent,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+      borderRadius: 4,
+      marginRight: 5,
+      marginBottom: 5,
+    },
 
-  // footer
-  footer: {
-    position: "absolute",
-    bottom: 22,
-    left: 56,
-    right: 56,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    fontSize: 8.25,
-    color: C.inkMuted,
-    paddingTop: 8,
-    borderTopWidth: 0.6,
-    borderTopColor: C.hairline,
-  },
-});
+    // certifications
+    certItem: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      marginBottom: 4,
+      fontSize: 9.5,
+    },
+    certName: {
+      fontFamily: cfg.fontBold,
+      color: cfg.ink,
+    },
+    certMeta: {
+      fontSize: 8.75,
+      color: cfg.inkMuted,
+    },
 
-function SectionHeader({ children }) {
+    // two-column layout
+    twoCol: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    colHalf: {
+      width: "48%",
+    },
+    pillLine: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginTop: 2,
+    },
+    pill: {
+      fontSize: 8.5,
+      backgroundColor: cfg.hairline,
+      color: cfg.ink,
+      paddingHorizontal: 6,
+      paddingVertical: 2.5,
+      borderRadius: 4,
+      marginRight: 4,
+      marginBottom: 4,
+    },
+
+    // footer
+    footer: {
+      position: "absolute",
+      bottom: 20,
+      left: 52,
+      right: 52,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      fontSize: 8,
+      color: cfg.inkMuted,
+      paddingTop: 6,
+      borderTopWidth: 0.5,
+      borderTopColor: cfg.hairline,
+    },
+  });
+}
+
+function SectionHeader({ children, styles, isCentered }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionHeaderText}>{children}</Text>
-      <View style={styles.sectionHeaderLine} />
+      {!isCentered && <View style={styles.sectionHeaderLine} />}
     </View>
   );
 }
 
-function Bullet({ children }) {
+function Bullet({ children, styles }) {
   return (
     <View style={styles.bullet} wrap={false}>
       <View style={styles.bulletDot} />
@@ -299,7 +355,7 @@ function Bullet({ children }) {
   );
 }
 
-function ContactItem({ children, href }) {
+function ContactItem({ children, href, styles }) {
   if (href) {
     return (
       <Link src={href} style={[styles.contactItem, styles.link]}>
@@ -317,7 +373,10 @@ function shortenUrl(url) {
     .replace(/\/$/, "");
 }
 
-export function ResumeDocument({ user, version, title }) {
+export function ResumeDocument({ user, version, title, template = "modern" }) {
+  const styles = buildStyles(template);
+  const cfg = themeConfigs[template] || themeConfigs.modern;
+
   const p = version?.parsedSections || {};
   const basics = p.basics || {};
 
@@ -336,16 +395,18 @@ export function ResumeDocument({ user, version, title }) {
 
           <View style={styles.contactRow}>
             {basics.location ? (
-              <ContactItem>{basics.location}</ContactItem>
+              <ContactItem styles={styles}>{basics.location}</ContactItem>
             ) : null}
             {displayEmail ? (
-              <ContactItem href={`mailto:${displayEmail}`}>
+              <ContactItem href={`mailto:${displayEmail}`} styles={styles}>
                 {displayEmail}
               </ContactItem>
             ) : null}
-            {basics.phone ? <ContactItem>{basics.phone}</ContactItem> : null}
+            {basics.phone ? (
+              <ContactItem styles={styles}>{basics.phone}</ContactItem>
+            ) : null}
             {(basics.links || []).map((l, i) => (
-              <ContactItem key={i} href={l.url}>
+              <ContactItem key={i} href={l.url} styles={styles}>
                 {l.label || shortenUrl(l.url || "")}
               </ContactItem>
             ))}
@@ -357,7 +418,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Summary */}
         {p.summary ? (
           <View style={styles.section}>
-            <SectionHeader>Summary</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Summary
+            </SectionHeader>
             <Text style={styles.summary}>{p.summary}</Text>
           </View>
         ) : null}
@@ -365,7 +428,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Experience */}
         {p.experience?.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader>Experience</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Experience
+            </SectionHeader>
             {p.experience.map((exp, i) => (
               <View key={i} style={styles.expItem} wrap={false}>
                 <View style={styles.expHeader}>
@@ -384,7 +449,9 @@ export function ResumeDocument({ user, version, title }) {
                   </Text>
                 )}
                 {(exp.bullets || []).map((b, j) => (
-                  <Bullet key={j}>{b}</Bullet>
+                  <Bullet key={j} styles={styles}>
+                    {b.replace(/^[-*•]\s*/, "")}
+                  </Bullet>
                 ))}
               </View>
             ))}
@@ -394,7 +461,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Projects */}
         {p.projects?.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader>Projects</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Projects
+            </SectionHeader>
             {p.projects.map((proj, i) => (
               <View key={i} style={styles.projItem} wrap={false}>
                 <View style={styles.projHeader}>
@@ -403,8 +472,8 @@ export function ResumeDocument({ user, version, title }) {
                     <Text style={styles.projTech}>{proj.tech.join(" · ")}</Text>
                   ) : null}
                 </View>
-                {proj.description ? (
-                  <Text style={styles.projDesc}>{proj.description}</Text>
+                {proj.summary || proj.description ? (
+                  <Text style={styles.projDesc}>{proj.summary || proj.description}</Text>
                 ) : null}
                 {proj.links?.length ? (
                   <View style={styles.projLinks}>
@@ -423,7 +492,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Education */}
         {p.education?.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader>Education</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Education
+            </SectionHeader>
             {p.education.map((edu, i) => (
               <View key={i} style={styles.eduItem} wrap={false}>
                 <View style={styles.eduRow}>
@@ -436,11 +507,6 @@ export function ResumeDocument({ user, version, title }) {
                   {edu.school}
                   {edu.location ? ` · ${edu.location}` : ""}
                 </Text>
-                {edu.details ? (
-                  <Text style={[styles.eduMeta, { marginTop: 2 }]}>
-                    {edu.details}
-                  </Text>
-                ) : null}
               </View>
             ))}
           </View>
@@ -449,7 +515,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Skills */}
         {p.skills?.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader>Skills</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Skills
+            </SectionHeader>
             <View style={styles.skillsGrid}>
               {p.skills.map((s, i) => (
                 <Text key={i} style={styles.skillChip}>
@@ -463,7 +531,9 @@ export function ResumeDocument({ user, version, title }) {
         {/* Certifications */}
         {p.certifications?.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader>Certifications</SectionHeader>
+            <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+              Certifications
+            </SectionHeader>
             {p.certifications.map((c, i) => (
               <View key={i} style={styles.certItem} wrap={false}>
                 <Text>
@@ -478,12 +548,14 @@ export function ResumeDocument({ user, version, title }) {
           </View>
         ) : null}
 
-        {/* Languages + Interests two-column */}
+        {/* Languages + Interests */}
         {(p.languages?.length > 0 || p.interests?.length > 0) && (
           <View style={[styles.section, styles.twoCol]}>
             {p.languages?.length > 0 && (
               <View style={styles.colHalf}>
-                <SectionHeader>Languages</SectionHeader>
+                <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+                  Languages
+                </SectionHeader>
                 <View style={styles.pillLine}>
                   {p.languages.map((l, i) => (
                     <Text key={i} style={styles.pill}>
@@ -495,7 +567,9 @@ export function ResumeDocument({ user, version, title }) {
             )}
             {p.interests?.length > 0 && (
               <View style={styles.colHalf}>
-                <SectionHeader>Interests</SectionHeader>
+                <SectionHeader styles={styles} isCentered={cfg.isCentered}>
+                  Interests
+                </SectionHeader>
                 <View style={styles.pillLine}>
                   {p.interests.map((l, i) => (
                     <Text key={i} style={styles.pill}>

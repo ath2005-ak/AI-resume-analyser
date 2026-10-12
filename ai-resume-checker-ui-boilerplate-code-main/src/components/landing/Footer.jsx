@@ -71,10 +71,10 @@ export function Footer() {
       <div className="rounded-[28px] bg-[var(--surface)] border border-[var(--border)] shadow-card p-8 sm:p-12">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 sm:gap-10">
           <div className="col-span-2">
-            <Link to="/" className="flex items-center gap-2.5">
+            <Link to="/" className="flex items-center gap-2.5" aria-label="AI Resume Tracker homepage">
               <AILogo />
               <span className="font-display text-[16px] font-semibold tracking-tight text-[var(--ink)]">
-                Resume Roaster
+                AI Resume Tracker
               </span>
             </Link>
             <p className="text-[13px] text-[var(--ink-muted)] mt-4 max-w-xs leading-relaxed">
@@ -82,11 +82,16 @@ export function Footer() {
               rather ship than polish.
             </p>
             <div className="flex items-center gap-2 mt-5">
-              {[GithubIcon, TwitterIcon, LinkedinIcon].map((Icon, i) => (
+              {[
+                { Icon: GithubIcon, name: "GitHub" },
+                { Icon: TwitterIcon, name: "Twitter" },
+                { Icon: LinkedinIcon, name: "LinkedIn" },
+              ].map(({ Icon, name }) => (
                 <a
-                  key={i}
+                  key={name}
                   href="#"
-                  className="h-8 w-8 rounded-full bg-[var(--surface-2)] hover:bg-[var(--accent-soft)] text-[var(--ink-muted)] hover:text-[var(--accent-strong)] flex items-center justify-center transition-colors"
+                  aria-label={name}
+                  className="h-8 w-8 rounded-full bg-[var(--surface-2)] hover:bg-[var(--accent-soft)] text-[var(--ink-muted)] hover:text-[var(--accent-strong)] flex items-center justify-center transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
                   <Icon />
                 </a>
@@ -116,9 +121,9 @@ export function Footer() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-[var(--ink-muted)]">
-          <div>© 2026 Resume Roaster. All rights reserved.</div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+          <div>© 2026 AI Resume Tracker. All rights reserved.</div>
+          <div className="flex items-center gap-1.5" role="status" aria-label="All systems operational">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)] animate-pulse" aria-hidden="true" />
             All systems operational
           </div>
         </div>

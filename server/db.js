@@ -5,9 +5,14 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const dbStorage =
+  process.env.NODE_ENV === "test" || process.env.DB_STORAGE === ":memory:"
+    ? ":memory:"
+    : (process.env.DB_STORAGE || path.join(__dirname, "database.sqlite"));
+
 export const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: path.join(__dirname, "database.sqlite"),
+  storage: dbStorage,
   logging: false, // Set to console.log to debug SQL queries
 });
 
@@ -139,6 +144,10 @@ export const Analysis = sequelize.define("Analysis", {
   },
   targetRole: {
     type: DataTypes.STRING,
+    allowNull: true,
+  },
+  jobDescription: {
+    type: DataTypes.TEXT,
     allowNull: true,
   },
 });

@@ -12,9 +12,11 @@ export function Tabs({ value, onValueChange, children, className }) {
   );
 }
 
-export function TabsList({ children, className }) {
+export function TabsList({ children, className, "aria-label": ariaLabel = "Navigation tabs" }) {
   return (
     <div
+      role="tablist"
+      aria-label={ariaLabel}
       className={cn(
         "inline-flex items-center gap-1 bg-[var(--surface-2)] border border-[var(--border)] p-1 rounded-full",
         className
@@ -30,9 +32,15 @@ export function TabsTrigger({ value, children, className }) {
   const active = ctx.value === value;
   return (
     <button
+      type="button"
+      role="tab"
+      id={`tab-${value}`}
+      aria-selected={active}
+      aria-controls={`tabpanel-${value}`}
+      tabIndex={active ? 0 : -1}
       onClick={() => ctx.onValueChange(value)}
       className={cn(
-        "relative px-3.5 h-8 text-xs font-medium rounded-full transition-colors",
+        "relative px-3.5 h-8 text-xs font-medium rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
         active ? "text-[var(--bg)]" : "text-[var(--ink-muted)] hover:text-[var(--ink)]",
         className
       )}
@@ -52,5 +60,15 @@ export function TabsTrigger({ value, children, className }) {
 export function TabsContent({ value, children, className }) {
   const ctx = useContext(TabsCtx);
   if (ctx.value !== value) return null;
-  return <div className={cn("", className)}>{children}</div>;
+  return (
+    <div
+      role="tabpanel"
+      id={`tabpanel-${value}`}
+      aria-labelledby={`tab-${value}`}
+      tabIndex={0}
+      className={cn("outline-none", className)}
+    >
+      {children}
+    </div>
+  );
 }

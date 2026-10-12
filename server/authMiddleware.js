@@ -4,10 +4,13 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_val";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === "default_jwt_secret_val") {
+  throw new Error("FATAL: JWT_SECRET must be securely set in environment variables.");
+}
 
 export async function authMiddleware(req, res, next) {
-  const token = req.cookies.jwt;
+  const token = req.cookies?.jwt || req.headers?.authorization?.replace(/^Bearer\s+/i, "");
 
   if (!token) {
     return res.status(401).json({ error: { message: "Not authenticated" } });

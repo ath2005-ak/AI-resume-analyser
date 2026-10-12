@@ -1,14 +1,23 @@
-import { reconstructText } from "./resumeRoutes.js";
-import { User, Resume, Version, Analysis, Activity, sequelize } from "./db.js";
+process.env.NODE_ENV = "test";
+process.env.DB_STORAGE = ":memory:";
+
 import assert from "node:assert";
+
+// Dynamically import local modules so that NODE_ENV='test' is active before Sequelize initializes
+const { reconstructText } = await import("./resumeRoutes.js");
+const { User, Resume, Version, Analysis, Activity, sequelize } = await import("./db.js");
 
 async function runTests() {
   console.log("=== STARTING BACKEND VERIFICATION TESTS ===");
 
   try {
+    // Verify in-memory database isolation
+    assert.strictEqual(sequelize.options.storage, ":memory:", "Tests must run against an in-memory database to protect database.sqlite");
+    console.log("✓ Verified database storage is strictly :memory: (real data is protected).");
+
     // 1. Test database connection and schema sync
     console.log("Testing database sync...");
-    await sequelize.sync({ force: true }); // use force: true to clear tables for testing
+    await sequelize.sync({ force: true }); // Safe because it's purely in-memory
     console.log("Database sync successful.");
 
     // 2. Test User Model creation
@@ -78,7 +87,7 @@ async function runTests() {
     const testAnalysis = await Analysis.create({
       versionId: testVersion.id,
       atsScore: 85,
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       summary: "This is a great resume.",
       scoreBreakdown: [
         { label: "Keywords", value: 90 },

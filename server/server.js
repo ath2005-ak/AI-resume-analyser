@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import { sequelize } from "./db.js";
 import authRoutes from "./authRoutes.js";
@@ -9,13 +10,36 @@ import analyticsRoutes from "./analyticsRoutes.js";
 
 dotenv.config();
 
+// Refuse to start without a valid JWT_SECRET
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === "" || process.env.JWT_SECRET === "default_jwt_secret_val") {
+  console.error("==================================================================");
+  console.error("FATAL SECURITY CONFIGURATION ERROR:");
+  console.error("JWT_SECRET environment variable is missing, empty, or set to an insecure default.");
+  console.error("The server refuses to start without a secure JWT_SECRET configured in .env.");
+  console.error("==================================================================");
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Enable CORS for frontend during dev (in case direct connection is used instead of proxy)
+// Security HTTP headers
+app.use(helmet());
+
+// Dynamic CORS configuration from environment variables
+const rawOrigins = process.env.CLIENT_URL || process.env.CORS_ORIGIN || "http://localhost:5173";
+const allowedOrigins = rawOrigins.split(",").map((o) => o.trim()).filter(Boolean);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. mobile apps, curl, or same-origin)
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS error: Origin '${origin}' is not permitted.`));
+      }
+    },
     credentials: true,
   })
 );
@@ -60,4 +84,9 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.NODE_ENV !== "test") {
+  startServer();
+}
+
+export { app, startServer };
+export default app;

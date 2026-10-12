@@ -40,14 +40,14 @@ export function Navbar() {
         )}
       >
         <div className="flex items-center justify-between gap-4 px-3 sm:px-4 py-2">
-          <Link to="/" className="flex items-center gap-2.5 pl-1">
+          <Link to="/" className="flex items-center gap-2.5 pl-1" aria-label="AI Resume Tracker homepage">
             <AILogo />
             <span className="font-display text-[15px] font-semibold tracking-tight text-[var(--ink)] hidden sm:inline">
-              Resume Roaster
+              AI Resume Tracker
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
+          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 -translate-x-1/2" aria-label="Main navigation">
             {NAV_LINKS.map((l) => (
               <a
                 key={l.href}
@@ -74,12 +74,15 @@ export function Navbar() {
               <ArrowRight
                 size={13}
                 className="group-hover:translate-x-0.5 transition-transform"
+                aria-hidden="true"
               />
             </Link>
             <button
               onClick={() => setOpen((o) => !o)}
               className="md:hidden h-9 w-9 rounded-full flex items-center justify-center text-[var(--ink)] hover:bg-[var(--surface-2)]"
-              aria-label="Toggle menu"
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-nav"
             >
               {open ? <X size={16} /> : <Menu size={16} />}
             </button>
@@ -89,6 +92,7 @@ export function Navbar() {
         {/* Mobile menu */}
         {open && (
           <motion.div
+            id="mobile-nav"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             className="md:hidden border-t border-[var(--border)] px-3 py-3 space-y-1"

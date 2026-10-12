@@ -11,11 +11,30 @@ import {
   changePasswordSchema,
 } from "./validation.js";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 
 dotenv.config();
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_val";
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET === "default_jwt_secret_val") {
+  throw new Error("FATAL: JWT_SECRET must be securely set in environment variables.");
+}
+
+// Rate limiter for authentication routes (login and register)
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Max 20 requests per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: {
+      message: "Too many authentication requests from this IP. Please try again after 15 minutes.",
+    },
+  },
+});
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -24,7 +43,7 @@ const COOKIE_OPTIONS = {
 };
 
 // 1. REGISTER
-router.post("/register", validateBody(registerSchema), async (req, res) => {
+router.post("/register", authRateLimiter, validateBody(registerSchema), async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
@@ -57,7 +76,7 @@ router.post("/register", validateBody(registerSchema), async (req, res) => {
 });
 
 // 2. LOGIN
-router.post("/login", validateBody(loginSchema), async (req, res) => {
+router.post("/login", authRateLimiter, validateBody(loginSchema), async (req, res) => {
   const { email, password } = req.body;
 
   try {

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Loader2, Mail, Lock } from "lucide-react";
+import { ArrowRight, Loader2, Mail, Lock, AlertCircle } from "lucide-react";
 import {
   AuthShell,
   AuthField,
@@ -14,6 +14,10 @@ import { useAuth } from "@/context/AuthContext";
 export default function Login() {
   const { login } = useAuth();
   const nav = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/dashboard";
+  const isExpired = searchParams.get("expired") === "true";
+
   const [form, setForm] = useState({ email: "", password: "" });
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,7 +28,7 @@ export default function Login() {
     setLoading(true);
     try {
       await login(form);
-      nav("/dashboard");
+      nav(redirect, { replace: true });
     } catch (e) {
       setErr(e.message || "Login failed");
     } finally {
@@ -38,7 +42,7 @@ export default function Login() {
         <>
           Sharpen your resume,
           <br />
-          <em style={{ fontStyle: "italic" }}>with intelligence.</em>
+          <span>with intelligence.</span>
         </>
       }
       subhead="Score against ATS, fix weak bullets, and ship a stronger version of yourself in minutes."
@@ -58,6 +62,16 @@ export default function Login() {
         <p className="text-[var(--ink-muted)] mt-2 text-[15px]">
           Sign in to keep sharpening your resume.
         </p>
+
+        {isExpired && (
+          <div
+            role="status"
+            className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300"
+          >
+            <AlertCircle size={14} className="shrink-0 text-amber-600" aria-hidden="true" />
+            <span>Your session has expired. Please sign in to continue.</span>
+          </div>
+        )}
 
         <form onSubmit={onSubmit} className="mt-9 space-y-4">
           <AuthField

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   TrendingUp,
   Sparkles,
@@ -26,6 +26,8 @@ export function BrandCardMarquee() {
 
   const tilts = [-2, 1.5, -1, 2, -1.5, 1];
 
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <div
       className="relative w-full overflow-hidden"
@@ -38,8 +40,8 @@ export function BrandCardMarquee() {
     >
       <motion.div
         className="flex gap-5 py-4"
-        animate={{ x: ["0%", "-400%"] }}
-        transition={{ duration: 55, repeat: Infinity, ease: "linear" }}
+        animate={shouldReduceMotion ? { x: "0%" } : { x: ["0%", "-400%"] }}
+        transition={shouldReduceMotion ? { duration: 0 } : { duration: 55, repeat: Infinity, ease: "linear" }}
       >
         {[...CARDS, ...CARDS].map((Card, i) => (
           <div
@@ -83,7 +85,7 @@ function Footer({ subtitle, version }) {
       <div className="flex items-center gap-2">
         <AILogo size={24} animated={false} />
         <span className="text-[11px] font-medium text-gray-700">
-          {subtitle || "Resume Roaster"}
+          {subtitle || "AI Resume Tracker"}
         </span>
       </div>
       {version && (
@@ -132,7 +134,7 @@ function AtsScoreCard() {
         />
       </div>
 
-      <Footer subtitle="Resume Roaster" version="V3 of 3" />
+      <Footer subtitle="AI Resume Tracker" version="V3 of 3" />
     </PreviewCard>
   );
 }
@@ -229,17 +231,18 @@ function TopIssuesCard() {
     { title: "Generic action verbs", sev: "medium" },
     { title: "No keyword density", sev: "high" },
   ];
-  const TONE = {
-    high: "bg-[#F8E3E0] text-[#B5564E]",
-    medium: "bg-[#FBF1E2] text-[#C28A3A]",
-    low: "bg-gray-100 text-gray-500",
+  const SEV_CONFIG = {
+    high: { label: "High", tone: "bg-[#F8E3E0] text-[#B5564E]", icon: "!" },
+    medium: { label: "Medium", tone: "bg-[#FBF1E2] text-[#C28A3A]", icon: "▲" },
+    low: { label: "Low", tone: "bg-gray-100 text-gray-500", icon: "•" },
   };
 
   return (
     <PreviewCard width={320}>
       <div className="flex items-start justify-between mb-4">
         <Label>Critical Issues</Label>
-        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-[#F8E3E0] text-[#B5564E]">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#F8E3E0] text-[#B5564E]" role="status" aria-label="5 critical issues found">
+          <span aria-hidden="true">!</span>
           5 found
         </div>
       </div>
@@ -247,7 +250,7 @@ function TopIssuesCard() {
       <div className="space-y-2.5">
         {issues.map((iss, i) => (
           <div key={i} className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0">
+            <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 shrink-0" aria-hidden="true">
               <AlertCircle size={13} />
             </div>
             <div className="flex-1 min-w-0">
@@ -256,9 +259,12 @@ function TopIssuesCard() {
               </div>
             </div>
             <span
-              className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${TONE[iss.sev]}`}
+              role="status"
+              aria-label={`Severity: ${iss.sev}`}
+              className={`inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${SEV_CONFIG[iss.sev]?.tone}`}
             >
-              {iss.sev}
+              <span aria-hidden="true">{SEV_CONFIG[iss.sev]?.icon}</span>
+              <span>{SEV_CONFIG[iss.sev]?.label}</span>
             </span>
           </div>
         ))}

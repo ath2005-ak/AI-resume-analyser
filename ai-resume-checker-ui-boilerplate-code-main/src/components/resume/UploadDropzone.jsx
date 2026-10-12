@@ -22,14 +22,18 @@ export function UploadDropzone({ onUploaded, compact = false }) {
   const upload = useUploadResume();
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
-    accept: { "application/pdf": [".pdf"] },
+    accept: {
+      "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/msword": [".doc", ".docx"],
+    },
     maxFiles: 1,
     maxSize: MAX_BYTES,
     multiple: false,
     onDropAccepted: (files) => {
       setErr("");
       setFile(files[0]);
-      if (!title) setTitle(files[0].name.replace(/\.pdf$/i, ""));
+      if (!title) setTitle(files[0].name.replace(/\.(pdf|docx|doc)$/i, ""));
     },
     onDropRejected: (rejections) => {
       const reason = rejections?.[0]?.errors?.[0]?.message || "File rejected";
@@ -61,8 +65,11 @@ export function UploadDropzone({ onUploaded, compact = false }) {
       {!file && (
         <div
           {...getRootProps()}
+          role="region"
+          aria-label="Resume file upload dropzone"
+          tabIndex={0}
           className={cn(
-            "rounded-3xl border border-dashed cursor-pointer transition-all duration-200 outline-none",
+            "rounded-3xl border border-dashed cursor-pointer transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
             compact ? "p-6" : "p-10",
             isDragActive
               ? "border-[var(--accent)] bg-[var(--accent-soft)]"
@@ -70,7 +77,7 @@ export function UploadDropzone({ onUploaded, compact = false }) {
             isDragReject && "border-[var(--danger)] bg-[#F8E3E0]"
           )}
         >
-          <input {...getInputProps()} />
+          <input {...getInputProps()} aria-label="Upload resume file (PDF or DOCX)" />
           <div className="flex flex-col items-center text-center">
             <motion.div
               animate={isDragActive ? { y: -4 } : { y: 0 }}
@@ -81,14 +88,15 @@ export function UploadDropzone({ onUploaded, compact = false }) {
                   ? "bg-[var(--accent)] text-white"
                   : "bg-[var(--accent-soft)] text-[var(--accent-strong)]"
               )}
+              aria-hidden="true"
             >
               <UploadCloud size={compact ? 18 : 22} />
             </motion.div>
             <div className={cn("font-display font-semibold tracking-tight", compact ? "text-sm" : "text-base")}>
-              {isDragActive ? "Drop it here" : "Drop your resume PDF"}
+              {isDragActive ? "Drop it here" : "Drop your resume (PDF or DOCX)"}
             </div>
             <div className="text-xs text-[var(--ink-muted)] mt-1">
-              or click to browse · max 5 MB · PDF only
+              or click to browse · max 5 MB · PDF or DOCX
             </div>
           </div>
         </div>
@@ -96,7 +104,7 @@ export function UploadDropzone({ onUploaded, compact = false }) {
 
       {file && (
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-4 flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent-strong)] shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center text-[var(--accent-strong)] shrink-0" aria-hidden="true">
             <FileText size={16} />
           </div>
           <div className="flex-1 min-w-0">
@@ -104,8 +112,10 @@ export function UploadDropzone({ onUploaded, compact = false }) {
             <div className="text-xs text-[var(--ink-muted)]">{formatBytes(file.size)}</div>
           </div>
           <button
+            type="button"
             onClick={reset}
-            className="h-8 w-8 rounded-full hover:bg-[var(--surface-2)] flex items-center justify-center text-[var(--ink-muted)]"
+            aria-label="Remove uploaded file"
+            className="h-8 w-8 rounded-full hover:bg-[var(--surface-2)] flex items-center justify-center text-[var(--ink-muted)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             disabled={upload.isPending}
           >
             <X size={14} />
@@ -117,6 +127,7 @@ export function UploadDropzone({ onUploaded, compact = false }) {
         <div className="space-y-3">
           <Input
             placeholder="Resume title (optional)"
+            aria-label="Resume title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
@@ -129,7 +140,7 @@ export function UploadDropzone({ onUploaded, compact = false }) {
           >
             {upload.isPending ? (
               <>
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
                 Parsing…
               </>
             ) : (
@@ -140,7 +151,7 @@ export function UploadDropzone({ onUploaded, compact = false }) {
       )}
 
       {err && (
-        <div className="text-xs text-[var(--danger)] bg-[#F8E3E0] rounded-xl px-3 py-2">
+        <div role="alert" className="text-xs text-[var(--danger)] bg-[#F8E3E0] rounded-xl px-3 py-2">
           {err}
         </div>
       )}

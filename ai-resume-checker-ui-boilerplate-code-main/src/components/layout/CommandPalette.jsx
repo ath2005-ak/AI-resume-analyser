@@ -128,6 +128,8 @@ export function CommandPalette({ open, onClose }) {
           navigate(it.to);
           onClose();
         }}
+        role="option"
+        aria-selected={isActive}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors",
           isActive
@@ -176,6 +178,7 @@ export function CommandPalette({ open, onClose }) {
           />
           <motion.div
             role="dialog"
+            aria-modal="true"
             aria-label="Command palette"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -184,9 +187,13 @@ export function CommandPalette({ open, onClose }) {
             className="relative w-full max-w-[640px] rounded-3xl bg-[var(--surface)] border border-[var(--border)] shadow-hover overflow-hidden"
           >
             <div className="flex items-center gap-3 px-5 h-14 border-b border-[var(--border)]">
-              <Search size={16} className="text-[var(--ink-muted)] shrink-0" />
+              <Search size={16} className="text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
               <input
                 ref={inputRef}
+                role="combobox"
+                aria-expanded={items.length > 0}
+                aria-controls="command-results"
+                aria-label="Search resumes or jump to a page"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -198,7 +205,7 @@ export function CommandPalette({ open, onClose }) {
               </kbd>
             </div>
 
-            <div ref={listRef} className="max-h-[52vh] overflow-y-auto p-2">
+            <div ref={listRef} id="command-results" role="listbox" aria-label="Search results" className="max-h-[52vh] overflow-y-auto p-2">
               {items.length === 0 && (
                 <div className="text-center text-sm text-[var(--ink-muted)] py-10">
                   No matches for &ldquo;{query}&rdquo;

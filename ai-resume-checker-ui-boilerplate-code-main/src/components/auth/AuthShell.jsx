@@ -98,16 +98,14 @@ function BrandPanel({ headline, subhead }) {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/8 border border-white/10 backdrop-blur-md">
             <Sparkles size={12} className="text-white/80" />
             <span className="text-[11px] tracking-wide text-white/80 uppercase font-semibold">
-              AI Resume Roaster
+              AI Resume Tracker
             </span>
           </div>
 
           <h2
-            className="font-serif text-[44px] xl:text-[60px] leading-[1.02] text-white mt-8 max-w-[540px]"
+            className="font-display text-[44px] xl:text-[56px] leading-[1.05] tracking-tight font-semibold text-white mt-8 max-w-[540px]"
             style={{
-              fontStyle: "italic",
-              fontWeight: 500,
-              letterSpacing: "-0.01em",
+              letterSpacing: "-0.02em",
             }}
           >
             {headline}
